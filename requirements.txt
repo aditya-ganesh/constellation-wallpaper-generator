@@ -1,3 +1,4 @@
 svgmanip
 pillow
 cairosvg
+colour
