@@ -2,3 +2,4 @@ svgmanip
 pillow
 cairosvg
 colour
+suntime
