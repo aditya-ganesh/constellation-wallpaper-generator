@@ -5,6 +5,8 @@ import random
 from copy import deepcopy
 from datetime import datetime, timedelta
 import time
+import os
+import subprocess
 
 import svgmanip as svg
 
@@ -62,7 +64,7 @@ if __name__ == "__main__":
         print(f"Hour : {now.hour}\t\t{colours}" )
         target = deepcopy(canvas)
 
-        palette = p.Palette("./palettes/kanagawa.yml",
+        palette = p.Palette("./palettes/spaceduck.yml",
                                 bgr_lum=colours["bgr_lum"],
                                 fil_lum=colours["fil_lum"],
                                 str_lum=colours["str_lum"])
@@ -71,9 +73,18 @@ if __name__ == "__main__":
         
         target.transform_colours(colours)
 
-
         target.export(f"output/constellation.png")
+        
+        abspath = os.path.abspath(f"output/constellation.png")
+
+        subprocess.call(["gsettings","set","org.gnome.desktop.background","picture-uri",
+                         f"file://{abspath}"])
+        subprocess.call(["gsettings","set","org.gnome.desktop.background","picture-uri-dark",
+                         f"file://{abspath}"])
 
         print(f"Sleeping for {delta} seconds until {next}")
         time.sleep(delta)
 
+
+# TODO
+# https://www.reddit.com/r/gnome/comments/x5zkdq/cannot_change_wallpaper_via_gsettings/
