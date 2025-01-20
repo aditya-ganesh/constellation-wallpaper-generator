@@ -1,6 +1,10 @@
-import artist
-import painter
+import artist as a
+import painter as p
+import schedule as s
 import random
+from copy import deepcopy
+from datetime import datetime, timedelta
+import time
 
 import svgmanip as svg
 
@@ -8,11 +12,11 @@ def draw(canvas_width : int,
          canvas_height : int,
          scale_factor : float,
          star_count : int, 
-         constellation: str) -> artist.Canvas:
+         constellation: str) -> a.Canvas:
 
     star_sizes = [0.005,0.025]
 
-    canvas = artist.Canvas(canvas_width,canvas_height)
+    canvas = a.Canvas(canvas_width,canvas_height)
     constellation = svg.Element(f"resources/constellations/{constellation}.svg")
     star = svg.Element("resources/star.svg")
     constellation_scaled,factor = canvas.scale_object(constellation,scale=scale_factor)
@@ -45,16 +49,31 @@ if __name__ == "__main__":
                    star_count=50,
                    constellation="canis-major")  
 
+    schedule = s.ColourSchedule(0,0)
 
-    palette = painter.Palette("./palettes/kanagawa.yml",
-                              bgr_lum=0.3,
-                              fil_lum=0.8,
-                              str_lum=0.0)
-
-    colours = palette.create_transform(background_colour="blue",line_colour="white")
     
-    canvas.transform_colours(colours)
+    while(True):
+
+        now = datetime.now()
+        next = now.replace(microsecond=0, second=0, minute=0) + timedelta(hours=1)
+        delta = (next - now).total_seconds()
+
+        colours = schedule.schedule[now.hour]
+        print(f"Hour : {now.hour}\t\t{colours}" )
+        target = deepcopy(canvas)
+
+        palette = p.Palette("./palettes/kanagawa.yml",
+                                bgr_lum=colours["bgr_lum"],
+                                fil_lum=colours["fil_lum"],
+                                str_lum=colours["str_lum"])
+
+        colours = palette.create_transform(background_colour=colours["bg_col"],line_colour=colours["fg_col"])
+        
+        target.transform_colours(colours)
 
 
-    canvas.dump("output/canvas.svg")
-    canvas.export("output/test.png")
+        target.export(f"output/constellation.png")
+
+        print(f"Sleeping for {delta} seconds until {next}")
+        time.sleep(delta)
+
