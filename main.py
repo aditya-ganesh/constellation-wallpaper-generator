@@ -7,8 +7,11 @@ from datetime import datetime, timedelta
 import time
 import os
 import subprocess
-
+import argparse
+import requests
 import svgmanip as svg
+
+
 
 def draw(canvas_width : int,
          canvas_height : int,
@@ -36,55 +39,113 @@ def draw(canvas_width : int,
     
     return canvas
 
+def geolocate() -> tuple:
+    lat,lon = 0,0
+    res = requests.get("https://api64.ipify.org/?format=json")
+    ip = None
+
+    if res:
+        ip = res.json()["ip"]
+        print(f"Public IP address is : {ip}")
+    
+    if ip:
+        res = requests.get(f"http://ip-api.com/json/{ip}")
+        print(res)
+        if res:
+            loc = res.json()
+            lat,lon = loc["lat"],loc["lon"]
+            print("IP based location is {},{},{}\nLat : {}\tLon : {}".format(
+                loc["city"],
+                loc["regionName"],
+                loc["country"],
+                lat,
+                lon
+            ))
+
+    return lat,lon
 
 if __name__ == "__main__":
     
-    star_count = 20
-    
 
-    canvas_width = 3440
-    canvas_height = 1440
+    parser = argparse.ArgumentParser()
 
-    canvas =  draw(canvas_width,
-                   canvas_height,
-                   scale_factor=0.7,
-                   star_count=50,
-                   constellation="canis-major")  
+    parser.add_argument("constellation")
+    parser.add_argument("--width",default=3440)
+    parser.add_argument("--height",default=1440)
+    parser.add_argument("-s","--scale",default=0.7)
+    parser.add_argument("-n","--star-count",default=50)
+    parser.add_argument("-d","--daemon",action="store_true")
+    parser.add_argument("-p","--palette",default="kanagawa.yml")
+    parser.add_argument("-a","--auto-location",action="store_true")
+    parser.add_argument("--lat",default=0)
+    parser.add_argument("--lon",default=0)
 
-    schedule = s.ColourSchedule(0,0)
-
-    
-    while(True):
-
-        now = datetime.now()
-        next = now.replace(microsecond=0, second=0, minute=0) + timedelta(hours=1)
-        delta = (next - now).total_seconds()
-
-        colours = schedule.schedule[now.hour]
-        print(f"Hour : {now.hour}\t\t{colours}" )
-        target = deepcopy(canvas)
-
-        palette = p.Palette("./palettes/spaceduck.yml",
-                                bgr_lum=colours["bgr_lum"],
-                                fil_lum=colours["fil_lum"],
-                                str_lum=colours["str_lum"])
-
-        colours = palette.create_transform(background_colour=colours["bg_col"],line_colour=colours["fg_col"])
-        
-        target.transform_colours(colours)
-
-        target.export(f"output/constellation.png")
-        
-        abspath = os.path.abspath(f"output/constellation.png")
-
-        subprocess.call(["gsettings","set","org.gnome.desktop.background","picture-uri",
-                         f"file://{abspath}"])
-        subprocess.call(["gsettings","set","org.gnome.desktop.background","picture-uri-dark",
-                         f"file://{abspath}"])
-
-        print(f"Sleeping for {delta} seconds until {next}")
-        time.sleep(delta)
+    args = parser.parse_args()
 
 
-# TODO
-# https://www.reddit.com/r/gnome/comments/x5zkdq/cannot_change_wallpaper_via_gsettings/
+    canvas =  draw(args.width,
+                   args.height,
+                   scale_factor=args.scale,
+                   star_count=args.star_count,
+                   constellation=args.constellation)  
+
+
+    if args.auto_location:
+        lat,lon = geolocate()
+    else:
+        lat,lon = float(args.lat),float(args.lon)
+
+    schedule = s.ColourSchedule(lat,lon)
+
+    if not args.daemon:
+
+        for hour,colours in schedule.schedule.items():
+            print(f"Hour : {hour}\t\t{colours}" )
+            palette = p.Palette(f"./palettes/{args.palette}",
+                                    bgr_lum=colours["bgr_lum"],
+                                    fil_lum=colours["fil_lum"],
+                                    str_lum=colours["str_lum"])
+            
+            target = deepcopy(canvas)
+            colours = palette.create_transform(background_colour=colours["bg_col"],line_colour=colours["fg_col"])
+            
+            target.transform_colours(colours)
+            os.makedirs("output/static",exist_ok=True)
+            target.export(f"output/static/constellation_{hour}.png")
+
+    else:
+        while(True):
+
+            now = datetime.now()
+            next = now.replace(microsecond=0, second=0, minute=0) + timedelta(hours=1)
+            delta = (next - now).total_seconds()
+
+            # If it's a new day, redo the schedule
+            if now.hour == 0:
+                schedule = s.ColourSchedule(args.lat,args.long)
+
+            colours = schedule.schedule[now.hour]
+            
+            print(f"Hour : {now.hour}\t\t{colours}" )
+            target = deepcopy(canvas)
+
+            palette = p.Palette(f"./palettes/{args.palette}",
+                                    bgr_lum=colours["bgr_lum"],
+                                    fil_lum=colours["fil_lum"],
+                                    str_lum=colours["str_lum"])
+
+            colours = palette.create_transform(background_colour=colours["bg_col"],line_colour=colours["fg_col"])
+            
+            target.transform_colours(colours)
+
+            target.export(f"output/constellation.png")            
+            abspath = os.path.abspath(f"output/constellation.png")
+
+            subprocess.call(["gsettings","set","org.gnome.desktop.background","picture-uri",
+                            f"file://{abspath}"])
+            subprocess.call(["gsettings","set","org.gnome.desktop.background","picture-uri-dark",
+                            f"file://{abspath}"])
+
+            print(f"Sleeping for {delta} seconds until {next}")
+            time.sleep(delta)
+
