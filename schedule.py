@@ -131,22 +131,24 @@ class ColourSchedule:
 
             if bgr_lum < 0.25:
                 str_lum = 0.7
+                fil_lum = 0.6
                 fg_col = "white"
             else:
                 str_lum = 0.0
                 fg_col = "black"
+                fil_lum = 1 
 
 
             match phase:
                 case "night":
                     bg_col = "black"
-                    fil_lum = 0.6
+
                 case "dawn" | "dusk":
                     bg_col = "magenta"
-                    fil_lum = 0.6                
+                                   
                 case "day":
                     bg_col = "blue"
-                    fil_lum = 1
+                    
 
             
             self.schedule[hour] = {
