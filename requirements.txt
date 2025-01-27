@@ -4,3 +4,4 @@ cairosvg
 colour
 suntime
 requests
+lxml
