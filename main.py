@@ -97,6 +97,8 @@ if __name__ == "__main__":
 
     schedule = s.ColourSchedule(lat,lon)
 
+    print(f"Colour schedule is calculated as : {schedule}")
+
     if not args.daemon:
 
         for hour,colours in schedule.schedule.items():
