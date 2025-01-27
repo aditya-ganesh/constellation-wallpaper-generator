@@ -7,11 +7,12 @@ class ColourSchedule:
     def __init__(self,lat: float, long: float) -> None:
         self.lat = lat
         self.long = long
+        self.tz = datetime.now().tzinfo
 
         try:
             stime = Sun(lat,long)
-            self.sunrise = stime.get_sunrise_time()
-            self.sunset = stime.get_sunset_time()
+            self.sunrise = stime.get_sunrise_time().astimezone(self.tz)
+            self.sunset = stime.get_sunset_time().astimezone(self.tz)
             self.dawn = self.sunrise.hour
             self.dusk = self.sunset.hour
             self.daylight_hours = self.sunset.hour - self.sunrise.hour - 1
@@ -122,9 +123,6 @@ class ColourSchedule:
         for i in range(self.nighttime_hours):
             hour = (self.sunset.hour + i + 1) % 24
             intensities[hour] = nighttime_intensities[i]
-
-        print(intensities)
-        print(self.midday_hour,self.midnight_hour)
 
         for hour,phase in self.schedule.items():
             bgr_lum = intensities[hour]
