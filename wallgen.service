@@ -1,0 +1,14 @@
+[Unit]
+Description= Constellation dynamic wallpaper generator
+
+[Service]
+Type=simple
+WorkingDirectory=<PATH-TO-WALLPAPER-GENERATOR-DIRECTORY>
+ExecStartPre=/bin/sleep 30
+ExecStart=sh start-daemon.sh
+Restart=always
+RestartSec=10
+
+
+[Install]
+WantedBy=default.target
