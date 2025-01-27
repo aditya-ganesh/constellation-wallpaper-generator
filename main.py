@@ -16,7 +16,8 @@ import svgmanip as svg
 def draw(canvas_width : int,
          canvas_height : int,
          scale_factor : float,
-         star_count : int, 
+         star_count : int,
+         star_alpha : float, 
          constellation: str) -> a.Canvas:
 
     star_sizes = [0.005,0.025]
@@ -34,7 +35,7 @@ def draw(canvas_width : int,
         x = random.uniform(0,canvas_width)
         y = random.uniform(0,canvas_height)
         star_scaled,factor = canvas.scale_object(star,scale)
-        star_scaled = canvas.set_object_alpha(star_scaled,fill_alpha=0.2,stroke_alpha=0)
+        star_scaled = canvas.set_object_alpha(star_scaled,fill_alpha=star_alpha,stroke_alpha=0)
         canvas.place_object(star_scaled,x,y,layer="detail")
     
     return canvas
@@ -82,13 +83,16 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    star_alpha = 0.5
 
     canvas =  draw(args.width,
                    args.height,
                    scale_factor=args.scale,
                    star_count=args.star_count,
+                   star_alpha=star_alpha,
                    constellation=args.constellation)  
 
+    canvas.dump(f"output/constellation.svg")
 
     if args.auto_location:
         lat,lon = geolocate()
@@ -98,6 +102,8 @@ if __name__ == "__main__":
     schedule = s.ColourSchedule(lat,lon)
 
     print(f"Colour schedule is calculated as : {schedule}")
+
+    
 
     if not args.daemon:
 
@@ -109,9 +115,14 @@ if __name__ == "__main__":
                                     str_lum=colours["str_lum"])
             
             target = deepcopy(canvas)
+            target.transform_alpha(current_alpha=star_alpha,
+                target_alpha=colours["star_al"])
+            
             colours = palette.create_transform(background_colour=colours["bg_col"],line_colour=colours["fg_col"])
             
             target.transform_colours(colours)
+
+
             os.makedirs("output/static",exist_ok=True)
             target.export(f"output/static/constellation_{hour}.png")
 
@@ -129,7 +140,11 @@ if __name__ == "__main__":
             colours = schedule.schedule[now.hour]
             
             print(f"Hour : {now.hour}\t\t{colours}" )
+            
             target = deepcopy(canvas)
+            target.transform_alpha(current_alpha=star_alpha,
+                        target_alpha=colours["star_al"])
+
 
             palette = p.Palette(f"./palettes/{args.palette}",
                                     bgr_lum=colours["bgr_lum"],
@@ -139,6 +154,8 @@ if __name__ == "__main__":
             colours = palette.create_transform(background_colour=colours["bg_col"],line_colour=colours["fg_col"])
             
             target.transform_colours(colours)
+
+            
 
             target.export(f"output/constellation.png")            
             abspath = os.path.abspath(f"output/constellation.png")

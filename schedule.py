@@ -72,10 +72,14 @@ class ColourSchedule:
     def tag_schedule_colours(self) -> None:
         
         min_day_lum = 0.15
-        max_day_lum = 0.4
+        max_day_lum = 0.3
         max_night_lum = 0.1
         transition_lum = 0.15
 
+        day_alpha = 0.1
+        transition_alpha = 0.2
+        min_star_alpha = 0.3
+        max_star_alpha = 0.6
         
         daylight_intensities = []
         # Increase daylight intensities in steps until midday, then decrease
@@ -93,49 +97,68 @@ class ColourSchedule:
         # Decrease nighttime intensities in steps until midnight, then increase
         if self.nighttime_hours > 0:
             night_lum_step = 2*max_night_lum/self.nighttime_hours
+            star_alpha_step = 2*(max_star_alpha-min_star_alpha)/self.nighttime_hours
+            
             descending_intensities = [max_night_lum - i*night_lum_step for i in range(0,self.nighttime_hours//2)]
+            ascending_star_alphas = [min_star_alpha + i*star_alpha_step for i in range(0,self.nighttime_hours//2)]
+            
+            # If it's a polar night, flip these, so that the middle of the day is brightest
+            
             if self.polar_night:
                 nighttime_intensities = []
                 nighttime_intensities.extend(reversed(descending_intensities))
                 nighttime_intensities.extend(descending_intensities)
+
+                star_alphas = []
+                star_alphas.extend(reversed(ascending_star_alphas))
+                star_alphas.extend(ascending_star_alphas)
 
             else:
 
                 if self.nighttime_hours % 2 == 0:
                     nighttime_intensities = descending_intensities.copy()
                     nighttime_intensities.extend(reversed(descending_intensities))
+
+                    star_alphas = ascending_star_alphas.copy()
+                    star_alphas.extend(reversed(ascending_star_alphas))
                 else:
                     nighttime_intensities = descending_intensities.copy()
                     nighttime_intensities.append(0)
-                    nighttime_intensities.extend(reversed(descending_intensities))            
+                    nighttime_intensities.extend(reversed(descending_intensities))
+
+                    star_alphas = ascending_star_alphas.copy()
+                    star_alphas.append(max_star_alpha)
+                    star_alphas.extend(reversed(ascending_star_alphas))
 
         intensities = {}
+        alphas = {}
         for i in range(24):
             intensities[i] = 0
+            alphas[i] = 0
 
         intensities[self.dawn] = transition_lum
         intensities[self.dusk] = transition_lum
+        
+        alphas[self.dawn] = transition_alpha
+        alphas[self.dusk] = transition_alpha
 
         for i in range(self.daylight_hours):
             hour = self.sunrise.hour + i + 1
             intensities[hour] = daylight_intensities[i]
+            alphas[hour] = day_alpha
         
         for i in range(self.nighttime_hours):
             hour = (self.sunset.hour + i + 1) % 24
             intensities[hour] = nighttime_intensities[i]
+            alphas[hour] = star_alphas[i]
 
         for hour,phase in self.schedule.items():
             bgr_lum = intensities[hour]
+            alpha = alphas[hour]
 
-            if bgr_lum < 0.25:
-                str_lum = 0.7
-                fil_lum = 0.6
-                fg_col = "white"
-            else:
-                str_lum = 0.0
-                fg_col = "black"
-                fil_lum = 1 
-
+            str_lum = 0.7
+            fil_lum = 0.6
+            fg_col = "white"
 
             match phase:
                 case "night":
@@ -155,7 +178,8 @@ class ColourSchedule:
                 "fg_col"    : fg_col,
                 "bgr_lum"   : bgr_lum,
                 "fil_lum"   : fil_lum,
-                "str_lum"   : str_lum
+                "str_lum"   : str_lum,
+                "star_al"   : alpha
             }
 
 

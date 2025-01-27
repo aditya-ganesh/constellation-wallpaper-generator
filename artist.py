@@ -178,6 +178,16 @@ class Canvas:
         self.canvas.placeat(self.detail,0,0)
         self.canvas.placeat(self.foreground,0,0)
 
+    def transform_alpha(self,current_alpha:float,target_alpha:float) -> None:
+        for obj in [self.background,self.detail,self.foreground]:
+            descendants = obj.root.iterdescendants()
+            for descendant in descendants:
+                if strip_tag(descendant.tag) in SVG_ELEMENTS:
+                    style = descendant.get('style')
+                    style = style.replace(f"fill-opacity:{current_alpha}",f"fill-opacity:{target_alpha}")
+                    descendant.set('style',style)
+
+
     def transform_colours(self,transform_colour_dict: dict) -> None:
         """
         
