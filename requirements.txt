@@ -3,3 +3,4 @@ pillow
 cairosvg
 colour
 suntime
+requests
