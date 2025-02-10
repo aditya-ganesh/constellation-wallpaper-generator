@@ -159,10 +159,12 @@ class ColourSchedule:
             str_lum = 0.7
             fil_lum = 0.6
             fg_col = "white"
+            squash_fill_colours = True
 
             match phase:
                 case "night":
                     bg_col = "black"
+                    squash_fill_colours = False
 
                 case "dawn" | "dusk":
                     bg_col = "magenta"
@@ -179,7 +181,8 @@ class ColourSchedule:
                 "bgr_lum"   : bgr_lum,
                 "fil_lum"   : fil_lum,
                 "str_lum"   : str_lum,
-                "star_al"   : alpha
+                "star_al"   : alpha,
+                "squash"    : squash_fill_colours
             }
 
 
