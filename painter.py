@@ -5,6 +5,44 @@ import os
 from colour import Color
 from copy import deepcopy
 
+import colorsys as clr
+
+
+# def hsv_to_hsl(hsv):
+#     h, s, v = hsv
+#     rgb = clr.hsv_to_rgb(h/360, s/100, v/100)
+#     r, g, b = rgb
+#     h, l, s = clr.rgb_to_hls(r, g, b)
+#     return h*360, s*100, l*100
+
+
+
+
+ 
+
+
+class ColorHSV(Color):
+
+    @staticmethod
+    def rgb2hsv(rgb):
+        r, g, b = rgb
+        h, s, v = clr.rgb_to_hsv(r, g, b)
+        return h,s,v
+
+    @staticmethod
+    def hsv2rgb(hsv):
+        h, s, v = hsv
+        r,g,b = clr.hsv_to_rgb(h, s, v)     
+        return r,g,b  
+
+
+    def set_value(self,v):
+        hsv = self.rgb2hsv(self.rgb)
+        hsv_new = hsv[0],hsv[1],v
+        rgb_new = self.hsv2rgb(hsv_new)
+        self.set_rgb(rgb_new)
+
+
 class Palette(dict):
 
     magic = {
@@ -29,16 +67,17 @@ class Palette(dict):
         
         self.palette = {}
         for key in colours["colors"]["normal"]:
-            self.palette[key] = Color(colours["colors"]["normal"][key])
+            self.palette[key] = ColorHSV(colours["colors"]["normal"][key])
 
         self.background = deepcopy(self.palette)
         self.fill = deepcopy(self.palette)
         self.stroke = deepcopy(self.palette)
 
         for key in self.palette:
-            self.background[key].luminance  = bgr_lum
-            self.fill[key].luminance        = fil_lum
-            self.stroke[key].luminance      = str_lum
+            
+            self.background[key].set_value(bgr_lum)
+            self.fill[key].set_value(fil_lum)
+            self.stroke[key].set_value(str_lum) 
 
 
     def __repr__(self) -> str:
@@ -59,7 +98,8 @@ class Palette(dict):
 
     def create_transform(self,
                          background_colour="black",
-                         line_colour = "white") -> dict:
+                         line_colour = "white",
+                         squash_fill_colours: bool = False) -> dict:
 
         colours = {}
 
@@ -72,7 +112,10 @@ class Palette(dict):
                 case "black":
                     colours[hex] = self.stroke[line_colour].hex
                 case _:
-                    colours[hex] = self.fill[colour].hex
+                    if squash_fill_colours:
+                        colours[hex] = self.stroke[line_colour].hex
+                    else:
+                        colours[hex] = self.fill[colour].hex
 
         return colours
             
