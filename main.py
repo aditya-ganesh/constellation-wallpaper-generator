@@ -65,14 +65,16 @@ def geolocate() -> tuple:
 
     return lat,lon
 
+
+
 if __name__ == "__main__":
     
 
     parser = argparse.ArgumentParser()
 
     parser.add_argument("constellation")
-    parser.add_argument("--width",default=3440)
-    parser.add_argument("--height",default=1440)
+    parser.add_argument("--width",default=3440,type=int)
+    parser.add_argument("--height",default=1440,type=int)
     parser.add_argument("-s","--scale",default=0.7)
     parser.add_argument("-n","--star-count",default=50)
     parser.add_argument("-d","--daemon",action="store_true")
@@ -118,7 +120,7 @@ if __name__ == "__main__":
             target.transform_alpha(current_alpha=star_alpha,
                 target_alpha=colours["star_al"])
             
-            colours = palette.create_transform(background_colour=colours["bg_col"],line_colour=colours["fg_col"])
+            colours = palette.create_transform(background_colour=colours["bg_col"],line_colour=colours["fg_col"],squash_fill_colours=colours["squash"])
             
             target.transform_colours(colours)
 
@@ -151,7 +153,7 @@ if __name__ == "__main__":
                                     fil_lum=colours["fil_lum"],
                                     str_lum=colours["str_lum"])
 
-            colours = palette.create_transform(background_colour=colours["bg_col"],line_colour=colours["fg_col"])
+            colours = palette.create_transform(background_colour=colours["bg_col"],line_colour=colours["fg_col"],squash_fill_colours=colours["squash"])
             
             target.transform_colours(colours)
 
